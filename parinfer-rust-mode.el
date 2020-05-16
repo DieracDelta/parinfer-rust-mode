@@ -46,15 +46,38 @@
                                     ((eq system-type 'darwin) "parinfer-rust-darwin.so")
                                     ((eq system-type 'gnu/linux) "parinfer-rust-linux.so"))
   "System dependent library name for parinfer-rust-mode")
-(defconst parinfer-rust-supported-version "0.4.0" "The version of the parinfer-rust library that parinfer-rust-mode was tested against")
+(defconst parinfer-rust-supported-version "0.4.3" "The version of the parinfer-rust library that parinfer-rust-mode was tested against")
+
+(defun get_path (ld_path)
+  "gets the loaded library path from the input LD_LOADER_PATH"
+  (if ld_path
+      ((lambda ()
+	 (let
+	     ((rgx
+	       (concat "[/a-z0-9A-Z\_]+-parinfer-rust-mode-overlay-" parinfer-rust-supported-version "/lib"))
+	      (attempted_match_index
+	       (string-match rgx ld_path)))
+	   (if attempted_match_index
+	     (concat
+	      (substring ld_path attempted_match_index
+			 (match-end 0))
+	      "/libparinfer_rust.so")
+	     "not found")
+	   )
+	 ))
+    "not found"))
+
 (defconst parinfer-rust--mode-types (list "indent" "smart" "paren") "The different modes that parinfer can operate on")
 (defvar-local parinfer-rust--test-p (not (not (getenv "parinfer_rust_test"))) "Predicate to determine if we're in test mode or not. We need to tweak some behavior of parinfer based on test mode to better emulate users.") ;; Hack for some versions of emacs
-
 ;; User customizations
-(defcustom parinfer-rust-library (locate-user-emacs-file (concat "parinfer-rust/" parinfer-rust--lib-name))
+
+(defcustom parinfer-rust-library (get_path (getenv "LD_LOADER_PATH"))
   "The location to store or to find the parinfer-rust library."
   :type 'file
   :group 'parinfer-rust-mode)
+
+
+
 (defcustom parinfer-rust-preferred-mode "smart"
   "The location to store or to find the parinfer-rust library."
   :type '(radio (const :tag "indent" "indent")
